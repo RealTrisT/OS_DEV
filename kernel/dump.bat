@@ -1,2 +1,2 @@
-objdump -d kernel.o
+objdump -M intel -d kernel.o
 pause
