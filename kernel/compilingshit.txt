@@ -1,6 +1,0 @@
-compile:
-	gcc -ffreestanding -c test.c -o test.o
-	objcopy -j .text -O binary test.o test.bin
-
-dump hex:
-	objdump -d test.o

@@ -1,0 +1,1 @@
+cat BOOT_SECTOR.bin KERNEL.bin > OS_IMAGE.iso

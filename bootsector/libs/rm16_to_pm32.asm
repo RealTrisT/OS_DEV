@@ -13,6 +13,9 @@ switch_to_pm:
 										; pre - fetched and real - mode decoded instructions , which can
 										; cause problems.
 [bits 32]
+	mov eax, cr0
+	or eax, 0x80000000
+	mov cr0, eax
 										; Initialise registers and the stack once in PM.
 	init_pm:
 	mov ax, DATA_SEG 					; Now in PM , our old segments are meaningless ,
@@ -21,6 +24,7 @@ switch_to_pm:
 	mov es, ax
 	mov fs, ax
 	mov gs, ax
+
 	mov ebp,0x90000 					; Update our stack position so it is right
 	mov esp,ebp 						; at the top of the free space.
 	call BEGIN_PM 						; Finally , call some well - known label

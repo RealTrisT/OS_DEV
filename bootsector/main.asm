@@ -7,7 +7,7 @@ start:
     mov sp, bp
 
                         ; read
-    mov dh, 0x5         ; 5 sectors    (4kb)
+    mov dh, 0x19         ; 19 sectors    (10kb total with the stub)
     ;mov es, 0           ; no segment
     mov bx, KERNEL_ADDR ; to the defined kernel address
     mov dl, [BOOT_DRIVE]; from this drive
@@ -40,8 +40,8 @@ BEGIN_PM :
 
     call KERNEL_ADDR                 ; go to our C kernel
 
-    mov ebx , MSG_finish
-    call print_string_pm            ; Use our 32 - bit print routine.
+    ;mov ebx , MSG_finish
+    ;call print_string_pm            ; Use our 32 - bit print routine.
 
     jmp $                           ; Hang.
 
