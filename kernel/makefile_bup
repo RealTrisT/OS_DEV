@@ -7,13 +7,10 @@ SRC:=kernel_code
 LIBS:=libs
 OBJ:=obj
 
-#SOURCES:=$(wildcard $(SRC)/*.c)
-SOURCES:=$(shell find $(SRC)/ -type f -name '*.c')
-LIBSRCS:=$(shell find $(LIBS)/ -type f -name '*.c')
-ASMSRCS:=$(shell find $(ASM)/ -type f -name '*.asm')
+SOURCES:=$(wildcard $(SRC)/*.c)
+LIBSRCS:=$(wildcard $(LIBS)/*.c)
+ASMSRCS:=$(wildcard $(ASM)/*.asm)
 OBJECTS:=$(patsubst $(SRC)/%.c, $(OBJ)/%.o, $(SOURCES)) $(patsubst $(LIBS)/%.c, $(OBJ)/%.o, $(LIBSRCS)) $(patsubst $(ASM)/%.asm, $(OBJ)/%.o, $(ASMSRCS))
-OBJDIRS:=$(dir $(OBJECTS))
-DUMMY:=$(shell mkdir --parents $(OBJDIRS))
 
 $(OBJ)/%.o:$(ASM)/%.asm
 	$(AC) -felf32 -o $@ $<

@@ -11,16 +11,11 @@ typedef struct {
 } tmcon_ConsoleState;
 
 
-
 tmcon_Character_Element* vga;
 tmcon_ConsoleState conState;
 
-
-
 void Clear();
 
-void Puts(unsigned int x, unsigned int y, char* str);
-
-void PrintHex(unsigned int x, unsigned int y, unsigned int n);
+void PrintHex(unsigned int n);
 
 void Print(char* s);
