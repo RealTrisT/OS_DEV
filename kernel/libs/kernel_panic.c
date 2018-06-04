@@ -1,5 +1,5 @@
 #include "kernel_panic.h"
-#include "TextModeConsole.h"
+#include "../kernel_code/terminal/tmcon.h"
 
 void Hang(){
 	for (;;);

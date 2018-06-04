@@ -1,0 +1,103 @@
+[bits 16]
+
+vbe_info:
+	.signature		db "VBE2"		; indicate support for VBE 2.0+
+	.table_data: 	TIMES 508 db 0	; reserve space for the table below
+
+global vbe_mode_info
+vbe_mode_info TIMES 256 db 0
+
+vbe_best_video_mode_nr	dw 0
+vbe_best_video_mode_bbp db 0
+vbe_best_video_mode_wid dw 0
+
+BootLoad16:
+	mov ax, 0
+	mov es, ax   				; indicate zero for the segment
+	mov di, vbe_info	 		; point DI to the vbe info struct
+	mov ax, 0x4F00				; indicate interrupt call: GET SuperVGA INFORMATION
+	int 0x10
+
+	cmp ax, 0x004F				; if return != 0x004F
+	jne VBE_SHIT_FAILED			;      shit bad
+
+	mov WORD es, [vbe_info+16]	; get the segment of the mode "table"
+	mov WORD di, [vbe_info+14]	; get the offset of the mode "table"
+
+
+
+	VESA_MODE_LOOP:
+		mov cx, [es:di]			; get ourselves that codeboy
+
+		cmp cx, 0xffff			; if it's the last
+		je VESA_MODE_LOOP_END	; exit the loop
+
+		;--------   Get the mode info
+			push es				; save es, we're gonna need it to tell where to store the mode info
+			push di 			; save di, we're gonna need it to tell where to store the mode info
+
+
+			mov ax, 0
+			mov es, ax			; indicate zero for the segment
+
+			mov ax, 0x4F01		; interrupt code 4F01 - GET SuperVGA MODE INFORMATION
+			mov di, vbe_mode_info
+			push es				; some vbe bios destroy es, so save it
+			int 0x10
+			pop  es 			; restore it
+
+			cmp ax, 0x004F 		; if return != 0x004F
+			jne VBE_SHIT_FAILED ;       shit bad
+
+			mov ax, [di] 		; set ax to the attributes
+			and ax, 0x80 		; if bit 7 (aka support for linear framebuffer) of the thing isn't 1
+			jz nextmode 		; we're not dealing with it
+				mov al, [di + 25]	; move bpp of current being processed into al
+				cmp al, [vbe_best_video_mode_bbp] 				; if ax < best found so far, 
+				jl nextmode										; just skip it cuz it's inferior
+					mov dx, [di + 18]							; move width of current being processed into dx
+					cmp dx, [vbe_best_video_mode_wid]			; if dx < best found so far
+					jl nextmode									; just skip it cuz it's inferior
+						mov [vbe_best_video_mode_wid], dx	; save this width
+						mov [vbe_best_video_mode_bbp], al	; save this bbp
+						mov [vbe_best_video_mode_nr],  cx 	; save this nr
+
+
+			nextmode:
+
+			pop  di 			; restore di so we can proceed with the loop
+			pop  es 			; restore es so we can proceed with the loop
+		;--------
+
+		add di, 2				; increment address so we get to the next on the table
+		jmp VESA_MODE_LOOP
+	VESA_MODE_LOOP_END:
+
+	; -------------------- at this point we have the best and biggest mode, so let's get it's info into our struct
+	
+	mov ax, 0
+	mov es, ax   				; indicate zero for the segment
+
+	mov cx, [vbe_best_video_mode_nr]
+	mov ax, 0x4F01		; interrupt code 4F01 - GET SuperVGA MODE INFORMATION
+	mov di, vbe_mode_info
+	push es				; some vbe bios destroy es, so save it
+	int 0x10
+	pop  es 			; restore it
+
+	; -------------------- and set that vbe mode
+
+	mov ax, 0x4F02 		; interrupt code 4F02 - SET SuperVGA MODE
+	xor bx, bx 			; zero out bx
+	mov bx, cx 			; bits 0 - 13 mode number
+	or  bx, 0x4000 		; set bit 14 (linear framebuffer) to 1
+	and bx, 0x7FFF 		; set bit 15 (clear framebuffer)  to 0
+	int 0x10
+	cmp ax, 0x004F
+	jne VBE_SHIT_FAILED
+
+	jmp SUCCS
+VBE_SHIT_FAILED:
+	jmp $
+SUCCS:
+	ret

@@ -1,0 +1,4 @@
+[bits 32]
+
+BootLoad32:
+	ret

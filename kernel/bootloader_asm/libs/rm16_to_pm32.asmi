@@ -1,3 +1,4 @@
+[bits 16]
 ; Switch to protected mode
 switch_to_pm:
 	cli									; We must switch of interrupts until we have
