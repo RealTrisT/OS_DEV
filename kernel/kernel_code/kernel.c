@@ -4,6 +4,8 @@
 #include "../libs/inoutwait.h"
 #include "terminal/PS2KB.h"
 #include "terminal/tmcon.h"
+#include "terminal/gmcon.h"
+#include "BITMAP_FONT.h"
 
 #define uint32 unsigned int 
 #define uint16 unsigned short 
@@ -16,14 +18,14 @@ struct vbe_mode_info_structure {
 	uint16 window_size;
 	uint16 segment_a;
 	uint16 segment_b;
-	uint32 win_func_ptr;		// deprecated; used to switch banks from protected mode without returning to real mode
+	uint32 win_func_ptr;	// deprecated; used to switch banks from protected mode without returning to real mode
 	uint16 pitch;			// number of bytes per horizontal line
 	uint16 width;			// width in pixels
 	uint16 height;			// height in pixels
 	uint8 w_char;			// unused...
 	uint8 y_char;			// ...
 	uint8 planes;
-	uint8 bpp;			// bits per pixel in this mode
+	uint8 bpp;				// bits per pixel in this mode
 	uint8 banks;			// deprecated; total number of banks in this mode
 	uint8 memory_model;
 	uint8 bank_size;		// deprecated; size of a bank, almost always 64 KB but may be 16 KB...
@@ -72,63 +74,44 @@ void DivByZero_InterruptHandler(uint32_t EFLAGS, uint32_t CS, uint32_t EIP, uint
 	Hang();
 }
 
-unsigned short leA[20] = {
-	0x000000,
-	0x000000,
-	0x000180,
-	0x000180,
-	0x0003c0,
-	0x0003c0,
-	0x000660,
-	0x000660,
-	0x000c30,
-	0x000c30,
-	0x000ff0,
-	0x001ff8,
-	0x001818,
-	0x001818,
-	0x001818,
-	0x00300c,
-	0x00300c,
-	0x00300c,
-	0x00300c,
-	0x000000
-};
-
-struct rgba{
-	unsigned char r; 
-	unsigned char g; 
-	unsigned char b; 
-	unsigned char a;
-};
-
-void PrintLetter(struct rgba* framebuffer, unsigned int width, unsigned short* letta, unsigned int x, unsigned int y, unsigned char r, unsigned char g, unsigned char b){
-	for (unsigned int Y = 0; Y < 20; ++Y){
-		for (unsigned int X = 0; X < 16; ++X){
-			framebuffer[(x+X)+(y+Y)*width] = ((letta[Y]>>(16-X))&1)?(struct rgba){b, g, r, 255}:(struct rgba){0};
-		}
-	}
-}
-
-unsigned int writeniggers = 0;
-
 void KeyboardIRQ(){
 	//char elchar[2] = {' ', 0};
 	while(inb(0x64) & 1){
 		unsigned char yee = inb(0x60);
 		//if(yee < 0xD9)elchar[0] = ScanCodeSet1[yee];
-		PrintLetter((struct rgba*)vbe_mode_info.framebuffer, vbe_mode_info.width, leA, writeniggers, 100, 255, 0, 0);
-		writeniggers+=16;
+		//PrintLetter((struct rgba*)vbe_mode_info.framebuffer, vbe_mode_info.width, character_letter_A, writeniggers, 100, 255, 0, 0);
+		//writeniggers+=6;
 	}
 }
 
 
+typedef struct{
+	unsigned char r; 
+	unsigned char g; 
+	unsigned char b; 
+	unsigned char a;
+} rgba;
+
+void PrintLetter(rgba* framebuffer, unsigned int width, unsigned char* letta, unsigned int x, unsigned int y, unsigned char r, unsigned char g, unsigned char b){
+	for (unsigned int X = 0; X < 5; ++X){
+		for (unsigned int Y = 0; Y < 8; ++Y){
+			framebuffer[(x+X)+(y+Y)*width] = ((letta[X]>>(Y))&1)?(rgba){b, g, r, 255}:(rgba){0};
+		}
+	}
+}
+
+void PrintStr(rgba* framebuffer, unsigned int width, unsigned int x, unsigned int y, char* str){
+	for (; *str; ++str, x+=6){
+		PrintLetter(framebuffer, width, upperAsciiTable[(*str)-32], x, y, 255, 255, 255);
+	}
+}
+
 void entryPoint(){
-//PrintLetter((struct rgba*)vbe_mode_info.framebuffer, vbe_mode_info.width, leA, 100, 100, 255, 0, 0);
-	InitIDT();
+	PrintStr((rgba*)vbe_mode_info.framebuffer, vbe_mode_info.width, 0, 0, "[BOOTED]");
+	InitIDT(); 
 	SetExceptionInterruptHandler(0, DivByZero_InterruptHandler);
 	PIC_remap(32, 40);
 	SetIRQInterruptHandler(1, KeyboardIRQ);
-	__stiEnable();		
+	__stiEnable();
 	return;
 }

@@ -1,5 +1,15 @@
 [bits 16]
 
+BootLoad16:
+	call SETUP_VBE
+	ret
+
+
+
+;------------------------------------------------------------------------------------------------
+;---------------------------------VBE STUFF------------------------------------------------------
+;------------------------------------------------------------------------------------------------
+
 vbe_info:
 	.signature		db "VBE2"		; indicate support for VBE 2.0+
 	.table_data: 	TIMES 508 db 0	; reserve space for the table below
@@ -11,7 +21,7 @@ vbe_best_video_mode_nr	dw 0
 vbe_best_video_mode_bbp db 0
 vbe_best_video_mode_wid dw 0
 
-BootLoad16:
+SETUP_VBE: ;-----------
 	mov ax, 0
 	mov es, ax   				; indicate zero for the segment
 	mov di, vbe_info	 		; point DI to the vbe info struct
@@ -56,8 +66,10 @@ BootLoad16:
 				cmp al, [vbe_best_video_mode_bbp] 				; if ax < best found so far, 
 				jl nextmode										; just skip it cuz it's inferior
 					mov dx, [di + 18]							; move width of current being processed into dx
-					cmp dx, [vbe_best_video_mode_wid]			; if dx < best found so far
-					jl nextmode									; just skip it cuz it's inferior
+					;cmp dx, [vbe_best_video_mode_wid]			; if dx < best found so far
+					;jl nextmode									; just skip it cuz it's inferior
+					cmp dx, 640	;--------------------------------------BAAAAAAAAAAAAAAAAAAD
+					jne nextmode;--------------------------------------BAAAAAAAAAAAAAAAAAAD
 						mov [vbe_best_video_mode_wid], dx	; save this width
 						mov [vbe_best_video_mode_bbp], al	; save this bbp
 						mov [vbe_best_video_mode_nr],  cx 	; save this nr
@@ -100,4 +112,6 @@ BootLoad16:
 VBE_SHIT_FAILED:
 	jmp $
 SUCCS:
-	ret
+
+
+
